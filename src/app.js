@@ -1,8 +1,8 @@
 import express from "express";
 import cors from "cors";
 import Joi from "joi";
-import dayjs from "dayjs";
 import { MongoClient } from "mongodb";
+import dayjs from "dayjs";
 
 const mongoClient = new MongoClient("mongodb://localhost:27017");
 let db;
@@ -20,6 +20,18 @@ const PORT = 5001;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.get("/participants", (_, res) => {
+  db.collection("participants")
+    .find()
+    .toArray()
+    .then((users) => {
+      return res.status(200).send(users);
+    });
+  // .then((users) => {
+  //   console.log(users);
+  // });
+});
 
 app.post("/participants", async (req, res) => {
   const { name } = req.body;
