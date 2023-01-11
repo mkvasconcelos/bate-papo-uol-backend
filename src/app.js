@@ -3,12 +3,15 @@ import cors from "cors";
 import Joi from "joi";
 import { MongoClient } from "mongodb";
 import dayjs from "dayjs";
+import dotenv from "dotenv";
+dotenv.config();
 
-const mongoClient = new MongoClient("mongodb://localhost:27017");
+// const mongoClient = new MongoClient("mongodb://localhost:27017");
+const mongoClient = new MongoClient(process.env.DATABASE_URL);
 let db;
 
 mongoClient.connect().then(() => {
-  db = mongoClient.db("bate-papo-uol");
+  db = mongoClient.db();
 });
 
 const schema = Joi.object({
@@ -28,9 +31,6 @@ app.get("/participants", (_, res) => {
     .then((users) => {
       return res.status(200).send(users);
     });
-  // .then((users) => {
-  //   console.log(users);
-  // });
 });
 
 app.post("/participants", async (req, res) => {
@@ -58,6 +58,18 @@ app.post("/participants", async (req, res) => {
   } catch (err) {
     return res.sendStatus(422);
   }
+});
+
+app.post("/messages", (req, res) => {
+  const { to, text, type } = req.body;
+  const User = req.headers.user;
+
+  console.log({
+    from: User,
+    to,
+    text,
+    type,
+  });
 });
 
 app.listen(PORT, () => {
