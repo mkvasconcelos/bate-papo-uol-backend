@@ -15,7 +15,10 @@ mongoClient.connect().then(() => {
 });
 
 const schema = Joi.object({
-  name: Joi.string(),
+  name: Joi.string().required(),
+  to: Joi.string().required(),
+  text: Joi.string().required(),
+  type: Joi.string().valid("private_message", "message").required(),
 });
 
 const app = express();
@@ -60,16 +63,31 @@ app.post("/participants", async (req, res) => {
   }
 });
 
-app.post("/messages", (req, res) => {
+app.post("/messages", async (req, res) => {
   const { to, text, type } = req.body;
-  const User = req.headers.user;
-
-  console.log({
-    from: User,
-    to,
-    text,
-    type,
+  const name = req.headers.user;
+  const participantUsed = await db.collection("participants").findOne({
+    name,
   });
+  if (!participantUsed) return res.sendStatus(422);
+  try {
+    await schema.validateAsync({
+      name,
+      to,
+      text,
+      type,
+    });
+    db.collection("messages").insertOne({
+      from: name,
+      to,
+      text,
+      type,
+      time: dayjs().format("HH:mm:ss"),
+    });
+    return res.sendStatus(200);
+  } catch {
+    return res.sendStatus(422);
+  }
 });
 
 app.listen(PORT, () => {
