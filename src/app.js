@@ -63,6 +63,22 @@ app.post("/participants", async (req, res) => {
   }
 });
 
+app.get("/messages", (req, res) => {
+  let { limit } = req.query;
+  limit = limit ? parseInt(limit) : 0;
+  const name = req.headers.user;
+  console.log(limit, name);
+  db.collection("messages")
+    .find({
+      $or: [{ from: name }, { to: "Todos" }, { to: name }],
+    })
+    .limit(limit)
+    .toArray()
+    .then((messages) => {
+      return res.status(200).send(messages);
+    });
+});
+
 app.post("/messages", async (req, res) => {
   const { to, text, type } = req.body;
   const name = req.headers.user;
