@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import Joi from "joi";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import dayjs from "dayjs";
 import dotenv from "dotenv";
 dotenv.config();
@@ -42,10 +42,10 @@ app.post("/participants", async (req, res) => {
     name,
   });
   if (participantUsed) return res.sendStatus(409);
+  schema.validate({
+    name,
+  });
   try {
-    await schema.validateAsync({
-      name,
-    });
     db.collection("participants").insertOne({
       name,
       lastStatus: Date.now(),
@@ -70,13 +70,13 @@ app.post("/messages", async (req, res) => {
     name,
   });
   if (!participantUsed) return res.sendStatus(422);
+  schema.validate({
+    name,
+    to,
+    text,
+    type,
+  });
   try {
-    await schema.validateAsync({
-      name,
-      to,
-      text,
-      type,
-    });
     db.collection("messages").insertOne({
       from: name,
       to,
@@ -84,9 +84,29 @@ app.post("/messages", async (req, res) => {
       type,
       time: dayjs().format("HH:mm:ss"),
     });
-    return res.sendStatus(200);
+    return res.sendStatus(201);
   } catch {
     return res.sendStatus(422);
+  }
+});
+
+app.post("/status", async (req, res) => {
+  const name = req.headers.user;
+  const lastStatus = Date.now();
+  const participantUsed = await db.collection("participants").findOne({
+    name,
+  });
+  if (!participantUsed) return res.sendStatus(404);
+  try {
+    await db
+      .collection("participants")
+      .updateOne(
+        { _id: ObjectId(participantUsed._id) },
+        { $set: { lastStatus } }
+      );
+    return res.sendStatus(200);
+  } catch {
+    return res.sendStatus(500);
   }
 });
 
