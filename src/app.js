@@ -6,13 +6,18 @@ import dayjs from "dayjs";
 import dotenv from "dotenv";
 dotenv.config();
 
-// const mongoClient = new MongoClient("mongodb://localhost:27017");
 const mongoClient = new MongoClient(process.env.DATABASE_URL);
 let db;
 
 mongoClient.connect().then(() => {
   db = mongoClient.db();
 });
+
+const app = express();
+const PORT = 5001;
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 const schema = Joi.object({
   name: Joi.string().required(),
@@ -21,11 +26,11 @@ const schema = Joi.object({
   type: Joi.string().valid("private_message", "message").required(),
 });
 
-const app = express();
-const PORT = 5001;
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+setInterval(() => {
+  db.collection("participants").deleteMany({
+    lastStatus: { $lt: Date.now() - 10000 },
+  });
+}, 15000);
 
 app.get("/participants", (_, res) => {
   db.collection("participants")
@@ -41,7 +46,7 @@ app.post("/participants", async (req, res) => {
   const participantUsed = await db.collection("participants").findOne({
     name,
   });
-  if (participantUsed) return res.sendStatus(409);
+  if (participantUsed || !name) return res.sendStatus(409);
   schema.validate({
     name,
   });
