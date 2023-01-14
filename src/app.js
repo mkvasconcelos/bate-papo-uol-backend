@@ -72,7 +72,6 @@ app.get("/messages", (req, res) => {
   let { limit } = req.query;
   limit = limit ? parseInt(limit) : 0;
   const name = req.headers.user;
-  console.log(limit, name);
   db.collection("messages")
     .find({
       $or: [{ from: name }, { to: "Todos" }, { to: name }],
