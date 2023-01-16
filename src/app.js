@@ -14,6 +14,13 @@ mongoClient.connect().then(() => {
   db = mongoClient.db();
 });
 
+try {
+  await mongoClient.connect();
+  db = mongoClient.db();
+} catch (error) {
+  console.error("mongoClient.connect() error!");
+}
+
 const app = express();
 const PORT = 5000;
 app.use(cors());
@@ -110,9 +117,9 @@ app.get("/messages", async (req, res) => {
       return res.sendStatus(422);
     });
   }
+  // .sort({ $natural: -1 })
   await db
     .collection("messages")
-    .sort({ $natural: -1 })
     .find({
       $or: [{ from: name }, { to: "Todos" }, { to: name }],
     })
