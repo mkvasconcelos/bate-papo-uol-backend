@@ -140,6 +140,24 @@ app.post("/messages", async (req, res) => {
   }
 });
 
+app.delete("/messages/:ID_MESSAGE", async (req, res) => {
+  const id = req.params.ID_MESSAGE;
+  const name = req.headers.user;
+  const messageRemoved = await db.collection("messages").findOne({
+    _id: ObjectId(id),
+  });
+  if (!messageRemoved) {
+    return res.sendStatus(404);
+  } else if (messageRemoved.from !== name) {
+    return res.sendStatus(401);
+  } else {
+    await db.collection("messages").deleteOne({
+      _id: ObjectId(id),
+    });
+    return res.sendStatus(200);
+  }
+});
+
 app.post("/status", async (req, res) => {
   const name = req.headers.user;
   const lastStatus = Date.now();
