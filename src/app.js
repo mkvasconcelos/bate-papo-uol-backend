@@ -174,6 +174,7 @@ app.delete("/messages/:ID_MESSAGE", async (req, res) => {
 app.put("/messages/:ID_MESSAGE", async (req, res) => {
   const id = req.params.ID_MESSAGE;
   const name = req.headers.user;
+  const { to, text, type } = req.body;
   const participantUsed = await db.collection("participants").findOne({
     name,
   });
