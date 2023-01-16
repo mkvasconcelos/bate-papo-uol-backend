@@ -26,6 +26,10 @@ const schema = Joi.object({
   type: Joi.string().valid("private_message", "message").required(),
 });
 
+const schemaName = Joi.object({
+  name: Joi.string().required(),
+});
+
 const schemaLimit = Joi.object({
   limit: Joi.number().positive().integer(),
 });
@@ -68,9 +72,8 @@ app.post("/participants", async (req, res) => {
     name,
   });
   if (participantUsed) return res.sendStatus(409);
-  schema.validate({
+  schemaName.validateAsync({
     name,
-    abortEarly: true,
   });
   try {
     await db.collection("participants").insertOne({
@@ -92,6 +95,7 @@ app.post("/participants", async (req, res) => {
 
 app.get("/messages", async (req, res) => {
   let { limit } = req.query;
+  if (Number(limit) === 0) return res.sendStatus(422);
   limit = limit ? Number(limit) : 0;
   const name = req.headers.user;
   if (limit !== 0) {
@@ -105,6 +109,7 @@ app.get("/messages", async (req, res) => {
     .find({
       $or: [{ from: name }, { to: "Todos" }, { to: name }],
     })
+    .sort({ $natural: -1 })
     .limit(limit)
     .toArray()
     .then((messages) => {
@@ -119,7 +124,7 @@ app.post("/messages", async (req, res) => {
     name,
   });
   if (!participantUsed) return res.sendStatus(422);
-  schema.validate({
+  schema.validateAsync({
     name,
     to,
     text,
