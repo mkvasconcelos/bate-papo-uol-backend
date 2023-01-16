@@ -4,7 +4,7 @@ import Joi from "joi";
 import { MongoClient, ObjectId } from "mongodb";
 import dayjs from "dayjs";
 import dotenv from "dotenv";
-import stripHtml from "string-strip-html";
+import { stripHtml } from "string-strip-html";
 dotenv.config();
 
 const mongoClient = new MongoClient(process.env.DATABASE_URL);
@@ -45,7 +45,7 @@ setInterval(async () => {
   participantsRemoved.map(async (p) => {
     const { _id, name } = p;
     await db.collection("messages").insertOne({
-      from: stripHtml(name),
+      from: stripHtml(name).result,
       to: "Todos",
       text: "sai da sala...",
       type: "status",
@@ -78,11 +78,11 @@ app.post("/participants", async (req, res) => {
   });
   try {
     await db.collection("participants").insertOne({
-      name: stripHtml(name),
+      name: stripHtml(name).result,
       lastStatus: Date.now(),
     });
     await db.collection("messages").insertOne({
-      from: stripHtml(name),
+      from: stripHtml(name).result,
       to: "Todos",
       text: "entra na sala...",
       type: "status",
@@ -105,12 +105,12 @@ app.get("/messages", async (req, res) => {
       return res.sendStatus(422);
     });
   }
+  // .sort({ $natural: -1 })
   await db
     .collection("messages")
     .find({
       $or: [{ from: name }, { to: "Todos" }, { to: name }],
     })
-    .sort({ $natural: -1 })
     .limit(limit)
     .toArray()
     .then((messages) => {
@@ -130,13 +130,12 @@ app.post("/messages", async (req, res) => {
     to,
     text,
     type,
-    abortEarly: true,
   });
   try {
     db.collection("messages").insertOne({
-      from: stripHtml(name),
+      from: stripHtml(name).result,
       to,
-      text: stripHtml(text).trim(),
+      text: stripHtml(text).result.trim(),
       type,
       time: dayjs().format("HH:mm:ss"),
     });
@@ -176,7 +175,6 @@ app.put("/messages/:ID_MESSAGE", async (req, res) => {
     to,
     text,
     type,
-    abortEarly: true,
   });
   const messageUpdated = await db.collection("messages").findOne({
     _id: ObjectId(id),
