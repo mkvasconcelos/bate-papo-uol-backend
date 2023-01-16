@@ -4,6 +4,7 @@ import Joi from "joi";
 import { MongoClient, ObjectId } from "mongodb";
 import dayjs from "dayjs";
 import dotenv from "dotenv";
+import stripHtml from "string-strip-html";
 dotenv.config();
 
 const mongoClient = new MongoClient(process.env.DATABASE_URL);
@@ -44,7 +45,7 @@ setInterval(async () => {
   participantsRemoved.map(async (p) => {
     const { _id, name } = p;
     await db.collection("messages").insertOne({
-      from: name,
+      from: stripHtml(name),
       to: "Todos",
       text: "sai da sala...",
       type: "status",
@@ -77,11 +78,11 @@ app.post("/participants", async (req, res) => {
   });
   try {
     await db.collection("participants").insertOne({
-      name,
+      name: stripHtml(name),
       lastStatus: Date.now(),
     });
     await db.collection("messages").insertOne({
-      from: name,
+      from: stripHtml(name),
       to: "Todos",
       text: "entra na sala...",
       type: "status",
@@ -133,9 +134,9 @@ app.post("/messages", async (req, res) => {
   });
   try {
     db.collection("messages").insertOne({
-      from: name,
+      from: stripHtml(name),
       to,
-      text,
+      text: stripHtml(text).trim(),
       type,
       time: dayjs().format("HH:mm:ss"),
     });
