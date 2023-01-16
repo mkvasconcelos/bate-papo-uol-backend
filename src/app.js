@@ -123,6 +123,7 @@ app.get("/messages", async (req, res) => {
     .find({
       $or: [{ from: name }, { to: "Todos" }, { to: name }],
     })
+    .sort({ $natural: limit === 0 ? 1 : -1 })
     .limit(limit)
     .toArray()
     .then((messages) => {
