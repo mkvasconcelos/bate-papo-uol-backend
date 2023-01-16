@@ -100,7 +100,9 @@ app.post("/participants", async (req, res) => {
 
 app.get("/messages", async (req, res) => {
   let { limit } = req.query;
-  if (Number(limit) === 0) return res.sendStatus(422);
+  if (Number(limit) === 0) {
+    return res.sendStatus(422);
+  }
   limit = limit ? Number(limit) : 0;
   const name = req.headers.user;
   if (limit !== 0) {
@@ -108,7 +110,6 @@ app.get("/messages", async (req, res) => {
       return res.sendStatus(422);
     });
   }
-  // .sort({ $natural: -1 })
   await db
     .collection("messages")
     .find({
