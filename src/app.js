@@ -73,9 +73,13 @@ app.post("/participants", async (req, res) => {
     name,
   });
   if (participantUsed) return res.sendStatus(409);
-  schemaName.validateAsync({
-    name,
-  });
+  schemaName
+    .validateAsync({
+      name,
+    })
+    .catch(() => {
+      return res.sendStatus(422);
+    });
   try {
     await db.collection("participants").insertOne({
       name: stripHtml(name).result,
@@ -100,8 +104,7 @@ app.get("/messages", async (req, res) => {
   limit = limit ? Number(limit) : 0;
   const name = req.headers.user;
   if (limit !== 0) {
-    schemaLimit.validateAsync({ limit }).catch((err) => {
-      console.log(err);
+    schemaLimit.validateAsync({ limit }).catch(() => {
       return res.sendStatus(422);
     });
   }
@@ -121,16 +124,21 @@ app.get("/messages", async (req, res) => {
 app.post("/messages", async (req, res) => {
   const { to, text, type } = req.body;
   const name = req.headers.user;
+  schema
+    .validateAsync({
+      name,
+      to,
+      text,
+      type,
+    })
+    .catch(() => {
+      return res.sendStatus(422);
+    });
   const participantUsed = await db.collection("participants").findOne({
     name,
   });
   if (!participantUsed) return res.sendStatus(422);
-  schema.validateAsync({
-    name,
-    to,
-    text,
-    type,
-  });
+
   try {
     db.collection("messages").insertOne({
       from: stripHtml(name).result,
