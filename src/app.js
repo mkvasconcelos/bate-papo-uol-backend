@@ -158,6 +158,38 @@ app.delete("/messages/:ID_MESSAGE", async (req, res) => {
   }
 });
 
+app.put("/messages/:ID_MESSAGE", async (req, res) => {
+  const id = req.params.ID_MESSAGE;
+  const name = req.headers.user;
+  const participantUsed = await db.collection("participants").findOne({
+    name,
+  });
+  if (!participantUsed) return res.sendStatus(422);
+  schema.validate({
+    name,
+    to,
+    text,
+    type,
+    abortEarly: true,
+  });
+  const messageUpdated = await db.collection("messages").findOne({
+    _id: ObjectId(id),
+  });
+  if (!messageUpdated) {
+    return res.sendStatus(404);
+  } else if (messageUpdated.from !== name) {
+    return res.sendStatus(401);
+  } else {
+    await db
+      .collection("participants")
+      .updateOne(
+        { _id: ObjectId(id) },
+        { $set: { to, text, type, from: name } }
+      );
+    return res.sendStatus(200);
+  }
+});
+
 app.post("/status", async (req, res) => {
   const name = req.headers.user;
   const lastStatus = Date.now();
