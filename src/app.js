@@ -112,6 +112,7 @@ app.get("/messages", async (req, res) => {
   }
   await db
     .collection("messages")
+    .sort({ $natural: -1 })
     .find({
       $or: [{ from: name }, { to: "Todos" }, { to: name }],
     })
