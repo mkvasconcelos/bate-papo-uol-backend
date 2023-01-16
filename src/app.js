@@ -26,9 +26,29 @@ const schema = Joi.object({
   type: Joi.string().valid("private_message", "message").required(),
 });
 
-setInterval(() => {
-  db.collection("participants").deleteMany({
-    lastStatus: { $lt: Date.now() - 10000 },
+const schemaLimit = Joi.object({
+  limit: Joi.number().positive().integer(),
+});
+
+setInterval(async () => {
+  const participantsRemoved = await db
+    .collection("participants")
+    .find({
+      lastStatus: { $lt: Date.now() - 10000 },
+    })
+    .toArray();
+  participantsRemoved.map(async (p) => {
+    const { _id, name } = p;
+    await db.collection("messages").insertOne({
+      from: name,
+      to: "Todos",
+      text: "sai da sala...",
+      type: "status",
+      time: dayjs().format("HH:mm:ss"),
+    });
+    await db.collection("participants").deleteOne({
+      _id,
+    });
   });
 }, 15000);
 
@@ -43,19 +63,21 @@ app.get("/participants", (_, res) => {
 
 app.post("/participants", async (req, res) => {
   const { name } = req.body;
+  if (!name) return res.sendStatus(422);
   const participantUsed = await db.collection("participants").findOne({
     name,
   });
-  if (participantUsed || !name) return res.sendStatus(409);
+  if (participantUsed) return res.sendStatus(409);
   schema.validate({
     name,
+    abortEarly: true,
   });
   try {
-    db.collection("participants").insertOne({
+    await db.collection("participants").insertOne({
       name,
       lastStatus: Date.now(),
     });
-    db.collection("messages").insertOne({
+    await db.collection("messages").insertOne({
       from: name,
       to: "Todos",
       text: "entra na sala...",
@@ -68,11 +90,18 @@ app.post("/participants", async (req, res) => {
   }
 });
 
-app.get("/messages", (req, res) => {
+app.get("/messages", async (req, res) => {
   let { limit } = req.query;
-  limit = limit ? parseInt(limit) : 0;
+  limit = limit ? Number(limit) : 0;
   const name = req.headers.user;
-  db.collection("messages")
+  if (limit !== 0) {
+    schemaLimit.validateAsync({ limit }).catch((err) => {
+      console.log(err);
+      return res.sendStatus(422);
+    });
+  }
+  await db
+    .collection("messages")
     .find({
       $or: [{ from: name }, { to: "Todos" }, { to: name }],
     })
@@ -95,6 +124,7 @@ app.post("/messages", async (req, res) => {
     to,
     text,
     type,
+    abortEarly: true,
   });
   try {
     db.collection("messages").insertOne({
