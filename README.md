@@ -7,8 +7,9 @@
 </p>
 
 <p align="center">
-    <a href="#features">Features</a> •
     <a href="#tech-stack">Tech-Stack</a> •
+    <a href="#tech-stack">Installation</a> •
+    <a href="#tech-stack">API Reference</a> •
     <a href="#deploy">Deploy</a> •
     <a href="#author">Author</a>
 </p>
@@ -41,7 +42,7 @@ Messages:
 - PUT /messages/:id -> headers: {user}
 
 Status:
-- POST /status -< headers: {user}
+- POST /status -> headers: {user}
 
 ### Deploy
 
